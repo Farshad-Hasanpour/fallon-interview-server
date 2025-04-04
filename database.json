@@ -6,7 +6,7 @@
             "password": "$2b$10$b3BjdyilKrrw0mZKlBSKZeza9VGkr6kWzzGQTFS1BrqD4XZn0WWNq"
         }
     ],
-	"bookings": [],
+    "bookings": [],
     "mentors": [
         {
             "id": 1,

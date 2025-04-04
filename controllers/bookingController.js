@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const jwtMiddleware = require("../middlewares/jwtMiddleware");
 const {getAllMentors, getAllBookings, addBooking} = require("../config/db.js");
+const mailer = require("../config/mail");
 
 const gapByMinute = 30;
 const DEFAULT_BOOKING_DURATION = 1000 * 60 * gapByMinute;
@@ -53,6 +54,20 @@ function findOverlappingBookingInList(bookingList, bookingTimestamp){
 		}
 	}
 	return null;
+}
+
+function sendBookingEmail(mentor, userEmail){
+	const mailText = `You booked a meeting with ${mentor.name}, successfully.`
+	return mailer.sendMail({
+		from: '"Fallon" <info@fallon.email>', // sender address
+		to: userEmail, // list of receivers
+		subject: "Meeting Booked",
+		text: mailText, // plain text body
+		html: `<p>${mailText}</p>`, // html body
+	}, (error, info) => {
+		if (error) return console.error('Email Error:', error);
+		console.log('Email sent:', info.messageId);
+	});
 }
 
 router.get('/bookings', jwtMiddleware, async (req, res) => {
@@ -125,6 +140,8 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		time: bookingTime,
 	}
 	await addBooking(newBooking);
+
+	sendBookingEmail(mentor, req.authorizedUser.email)
 
 	return res.sendResponse(201, '', {
 		mentor,
