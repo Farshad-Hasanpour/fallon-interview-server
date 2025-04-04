@@ -65,6 +65,10 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		if(isNaN(bookingTime)){
 			return res.sendResponse(400, 'Incorrect time format');
 		}
+		// must be bigger than min acceptable time
+		if(bookingTime.getTime() <= new Date().getTime() + DEFAULT_BOOKING_DURATION){
+			return res.sendResponse(400, 'Too soon! please select another time');
+		}
 	}
 
 	const allMentorBookings = await getBookingsByMentorEmail(mentor.email);

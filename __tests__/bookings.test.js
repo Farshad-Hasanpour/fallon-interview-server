@@ -16,6 +16,10 @@ const token = jwt.sign({
 
 const prefix = '/api/v1'
 
+const tomorrow = new Date(new Date().getTime() + (24 * 60 * 60 * 1000));
+const tenMinAfterTomorrow = new Date(tomorrow.getTime() + (10 * 60 * 1000));
+const tenMinBeforeTomorrow = new Date(tomorrow.getTime() - (10 * 60 * 1000));
+
 function mockAction(databaseAction, data){
 	databaseAction.mockImplementation(jest.fn().mockReturnValue(data))
 }
@@ -58,6 +62,11 @@ describe('POST /bookings', () => {
 		expect(res.body.message).toBe('Incorrect time format');
 	});
 
+	it('Must fail when req.body.time is too soon', async () => {
+		const res = await book({mentorEmail: 'john@carpet.com', time: '2020-04-04T16:55:39.442Z'});
+		expect(res.body.message).toBe('Too soon! please select another time');
+	})
+
 	describe('When booking has no time (as soon as possible)', () => {
 		it('Must create when user has not booked with that mentor yet', async () => {
 			mockAction(getAllBookings, [])
@@ -78,14 +87,15 @@ describe('POST /bookings', () => {
 
 	describe('When booking has specific start time (each meeting takes 30 minutes)', () => {
 		describe('Must fail when user has another meeting with overlapping times', () => {
+
 			const mockBookings = () => mockAction(getAllBookings, [
-				{ mentorEmail: 'sara@johnson.com', userEmail: loggedUserEmail, time: '2025-04-04T16:55:39.442Z' },
+				{ mentorEmail: 'sara@johnson.com', userEmail: loggedUserEmail, time: tomorrow.toISOString() },
 			])
 
 			it('When overlapping time is greater than booking time', async () => {
 				mockBookings();
 
-				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
+				const res = await book({ mentorEmail: 'john@carpet.com', time: tenMinAfterTomorrow.toISOString() });
 				expect(
 					res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
 				).toBe(true);
@@ -94,7 +104,7 @@ describe('POST /bookings', () => {
 			it('When overlapping time is lower than booking time', async () => {
 				mockBookings();
 
-				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
+				const res = await book({ mentorEmail: 'john@carpet.com', time: tenMinBeforeTomorrow.toISOString() });
 				expect(
 					res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
 				).toBe(true);
@@ -103,13 +113,13 @@ describe('POST /bookings', () => {
 
 		describe('Must fail when mentor has another meeting with overlapping times', () => {
 			const markBookings = () => mockAction(getAllBookings, [
-				{ mentorEmail: 'john@carpet.com', userEmail: 'test@example.com', time: '2025-04-04T16:55:39.442Z' },
+				{ mentorEmail: 'john@carpet.com', userEmail: 'test@example.com', time: tomorrow.toISOString() },
 			])
 
 			it('When overlapping time is greater than booking time', async () => {
 				markBookings()
 
-				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
+				const res = await book({ mentorEmail: 'john@carpet.com', time: tenMinAfterTomorrow.toISOString() });
 				expect(
 					res.body.message.startsWith('Sorry. This mentor has another meeting from ')
 				).toBe(true);
@@ -118,7 +128,7 @@ describe('POST /bookings', () => {
 			it('When overlapping times lower than booking time', async () => {
 				markBookings()
 
-				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
+				const res = await book({ mentorEmail: 'john@carpet.com', time: tenMinBeforeTomorrow.toISOString() });
 				expect(
 					res.body.message.startsWith('Sorry. This mentor has another meeting from ')
 				).toBe(true);
@@ -126,9 +136,13 @@ describe('POST /bookings', () => {
 		})
 
 		it('Must create booking when both user and mentor are free around that time', async () => {
-			mockAction(getAllBookings, [])
+			mockAction(getAllBookings, [{
+				mentorEmail: 'john@carpet.com',
+				userEmail: loggedUserEmail,
+				time: new Date().toISOString(),
+			}])
 
-			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
+			const res = await book({ mentorEmail: 'john@carpet.com', time: tomorrow.toISOString() });
 			expect(
 				res.status
 			).toBe(201);
