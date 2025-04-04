@@ -6,13 +6,7 @@
             "password": "$2b$10$BT.kKajOVaAjF7F9C3F3MetHuOotAHb8MSR71ndXab8tYcIqj3J9a"
         }
     ],
-	"bookings": [
-		{
-			"userEmail": "",
-			"mentorEmail": "",
-			"time": null
-		}
-	],
+	"bookings": [],
     "mentors": [
         {
             "id": 1,
