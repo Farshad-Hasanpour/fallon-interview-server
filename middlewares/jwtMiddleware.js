@@ -10,8 +10,8 @@ module.exports = async (req, res, next) => {
 			return res.sendResponse(401, 'email does not exist in token payload.')
 		}
 
-		const authorizedUser = (await getAllUsers())
-			.find(user => user.email === payload.email);
+		const allUsers = (await getAllUsers());
+		const authorizedUser = allUsers?.find(user => user.email === payload.email);
 
 		if(!authorizedUser){
 			return res.sendResponse(401, 'Failed to authorize token')

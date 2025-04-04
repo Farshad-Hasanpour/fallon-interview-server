@@ -1,25 +1,47 @@
 const request  = require('supertest');
 require('../config/process');
 const app = require('../config/app');
+const jwt = require('jsonwebtoken');
 
 jest.mock('node-json-db');
 const { JsonDB } = require('node-json-db');
-// const db = new JsonDB(new Config("__tests__/database", true, true, '/'));
 
+const prefix = '/api/v1'
 describe('POST /bookings', () => {
 	beforeEach(() => {
 		JsonDB.mockClear();
 	});
 
-	it('must fail when req.body.mentorEmail is not set or mentor is not found', async () => {
-		const mockGetData = jest.fn().mockReturnValue({ id: 1, name: 'Alice' });
+	// Set jwt token
+	const loggedUserEmail = 'farshad.hasanpour96@gmail.com'
+	const mockGetAllUsers = jest.fn().mockReturnValue([
+		{
+			email: loggedUserEmail,
+		},
+		{
+			email: 'john@carpet.com'
+		}
+	]);
 
-		// When Express app calls new JsonDB(...), it gets this fake instance
-		JsonDB.mockImplementation(() => ({
-			getData: mockGetData
-		}));
+	JsonDB.mockImplementation(() => ({
+		getAllUsers: mockGetAllUsers
+	}));
+	const token = jwt.sign({
+		email: loggedUserEmail
+	}, process.env.NODE_APP_JWT_SECRET, {
+		expiresIn: process.env.NODE_APP_JWT_REMEMBER_ME_EXPIRE
+	});
 
-		expect(1 + 1).toBe(2);
+	it('must fail when req.body.mentorEmail is not set', async () => {
+		const res = await request(app).post(`${prefix}/bookings`)
+			.send({time: null})
+			.set('Authorization', `Bearer ${token}`)
+
+		expect(res.body.message).toBe('Mentor not found');
+	});
+
+	it('must fail when mentor is not found', async () => {
+		expect(1 + 1).toBe(2)
 	});
 
 	it('must fail when req.body.time is not formatted correctly', async () => {
@@ -38,6 +60,7 @@ describe('POST /bookings', () => {
 	})
 
 	describe('When booking has specific start time (each meeting takes 30 minutes)', () => {
+
 		it('Must fail when user has another meeting with overlapping times', async () => {
 			expect(1 + 1).toBe(2);
 		})
@@ -47,8 +70,6 @@ describe('POST /bookings', () => {
 		})
 
 		it('Must create booking when both user and mentor are free around that time', async () => {
-			// db.getUsers.mockResolvedValue([{ id: 1, name: 'Alice' }]);
-
 			expect(1 + 1).toBe(2);
 		});
 	})
