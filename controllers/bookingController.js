@@ -12,13 +12,15 @@ async function findMentorByEmail(email) {
 }
 
 async function getBookingsByMentorEmail(mentorEmail){
-	return (await getAllBookings())
-		.filter(booking => booking.mentorEmail === mentorEmail);
+	return (await getAllBookings())?.filter(booking =>
+		booking.mentorEmail === mentorEmail
+	) || [];
 }
 
 async function getBookingsByUserEmail(userEmail){
-	return (await getAllBookings())
-		.filter(booking => booking.userEmail === userEmail);
+	return (await getAllBookings())?.filter(booking =>
+		booking.userEmail === userEmail
+	) || [];
 }
 
 function isReserveTimeOverlapping(reservedTimestamp, bookingTimestamp){
@@ -59,18 +61,13 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 
 	let bookingTime = null;
 	if(req.body.time){
-		try{
-			bookingTime = new Date(req.body.time);
-		} catch(error){
+		bookingTime = new Date(req.body.time);
+		if(isNaN(bookingTime)){
 			return res.sendResponse(400, 'Incorrect time format');
 		}
 	}
 
-
-
 	const allMentorBookings = await getBookingsByMentorEmail(mentor.email);
-
-
 	if(bookingTime){
 		const bookingTimestamp = bookingTime.getTime()
 

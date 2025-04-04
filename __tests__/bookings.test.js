@@ -1,53 +1,60 @@
 const request  = require('supertest');
 require('../config/process');
 const app = require('../config/app');
-const jwt = require('jsonwebtoken');
 
-jest.mock('node-json-db');
-const { JsonDB } = require('node-json-db');
+jest.mock('../config/db');
+const {getAllUsers, getAllMentors, getAllBookings, addBooking} = require("../config/db.js");
+
+// Set jwt token
+const jwt = require('jsonwebtoken');
+const loggedUserEmail = 'farshad.hasanpour96@gmail.com'
+const token = jwt.sign({
+	email: loggedUserEmail
+}, process.env.NODE_APP_JWT_SECRET, {
+	expiresIn: process.env.NODE_APP_JWT_REMEMBER_ME_EXPIRE
+});
 
 const prefix = '/api/v1'
+
+function book(data){
+	return request(app).post(`${prefix}/bookings`)
+		.send(data)
+		.set('Authorization', `Bearer ${token}`)
+}
+
 describe('POST /bookings', () => {
 	beforeEach(() => {
-		JsonDB.mockClear();
+		getAllUsers.mockClear();
+		getAllMentors.mockClear();
+		getAllBookings.mockClear();
+		addBooking.mockClear();
 	});
 
-	// Set jwt token
-	const loggedUserEmail = 'farshad.hasanpour96@gmail.com'
-	const mockGetAllUsers = jest.fn().mockReturnValue([
-		{
-			email: loggedUserEmail,
-		},
-		{
-			email: 'john@carpet.com'
-		}
-	]);
-
-	JsonDB.mockImplementation(() => ({
-		getAllUsers: mockGetAllUsers
-	}));
-	const token = jwt.sign({
-		email: loggedUserEmail
-	}, process.env.NODE_APP_JWT_SECRET, {
-		expiresIn: process.env.NODE_APP_JWT_REMEMBER_ME_EXPIRE
-	});
+	getAllUsers.mockImplementation(jest.fn().mockReturnValue([
+		{ email: loggedUserEmail },
+		{ email: 'john@carpet.com' }
+	]));
 
 	it('must fail when req.body.mentorEmail is not set', async () => {
-		const res = await request(app).post(`${prefix}/bookings`)
-			.send({time: null})
-			.set('Authorization', `Bearer ${token}`)
-
+		const res = await book({time: null});
 		expect(res.body.message).toBe('Mentor not found');
 	});
 
 	it('must fail when mentor is not found', async () => {
-		expect(1 + 1).toBe(2)
+		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
+			{ email: 'john@carpet.com' }
+		]));
+
+		const res = await book({mentorEmail: 'sdfgf@sdffg.com'});
+		expect(res.body.message).toBe('Mentor not found');
 	});
 
 	it('must fail when req.body.time is not formatted correctly', async () => {
-		// db.getUsers.mockResolvedValue([{ id: 1, name: 'Alice' }]);
-
-		expect(1 + 1).toBe(2);
+		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
+			{ email: 'john@carpet.com' }
+		]));
+		const res = await book({mentorEmail: 'john@carpet.com', time: 'd3c3'});
+		expect(res.body.message).toBe('Incorrect time format');
 	});
 
 	describe('When booking has no time (as soon as possible)', () => {

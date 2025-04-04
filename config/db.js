@@ -8,7 +8,6 @@ const db = new JsonDB(new Config(
 ));
 
 module.exports = {
-	db,
 	getAllUsers: () => db.getData("/users"),
 	getAllMentors: () => db.getData("/mentors"),
 	getAllBookings: () => db.getData("/bookings"),
