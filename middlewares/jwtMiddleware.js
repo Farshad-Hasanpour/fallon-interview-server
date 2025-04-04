@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+const {getAllUsers} = require('../config/db');
 
 module.exports = async (req, res, next) => {
 	try{
@@ -10,7 +10,7 @@ module.exports = async (req, res, next) => {
 			return res.sendResponse(401, 'email does not exist in token payload.')
 		}
 
-		const authorizedUser = (await db.getData(`/users`))
+		const authorizedUser = (await getAllUsers())
 			.find(user => user.email === payload.email);
 
 		if(!authorizedUser){

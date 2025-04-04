@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = require("express").Router();
-const db = require("../config/db");
+const {getAllUsers, addUser} = require("../config/db");
 
 async function findUserByEmail(email) {
-	const allUsers = await db.getData(`/users`);
+	const allUsers = await getAllUsers();
 	if(!allUsers?.length) return null;
 	return allUsers.find(user => user.email === email)
 }
@@ -33,7 +33,7 @@ router.post("/auth/signup", async (req, res) => {
 		email: req.body.email,
 		password: req.body.password,
 	};
-	await db.push('/users[]', newUser);
+	await addUser(newUser)
 
 	// assign a jwt
 	const token = await signJWT(newUser.email, req.body.rememberMe)

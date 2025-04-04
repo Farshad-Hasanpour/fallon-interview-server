@@ -1,23 +1,23 @@
 const router = require("express").Router();
 const jwtMiddleware = require("../middlewares/jwtMiddleware");
-const db = require("../config/db.js");
+const {getAllMentors, getAllBookings, addBooking} = require("../config/db.js");
 
 const gapByMinute = 30;
 const DEFAULT_BOOKING_DURATION = 1000 * 60 * gapByMinute;
 
 async function findMentorByEmail(email) {
-	const allMentors = await db.getData(`/mentors`);
+	const allMentors = await getAllMentors();
 	if(!allMentors?.length) return null;
 	return allMentors.find(mentor => mentor.email === email)
 }
 
 async function getBookingsByMentorEmail(mentorEmail){
-	return (await db.getData('/bookings'))
+	return (await getAllBookings())
 		.filter(booking => booking.mentorEmail === mentorEmail);
 }
 
 async function getBookingsByUserEmail(userEmail){
-	return (await db.getData('/bookings'))
+	return (await getAllBookings())
 		.filter(booking => booking.userEmail === userEmail);
 }
 
@@ -112,7 +112,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		mentorEmail: mentor.email,
 		time: bookingTime,
 	}
-	await db.push('/bookings[]', newBooking);
+	await addBooking(newBooking);
 
 	return res.sendResponse(201, '', {
 		mentor,

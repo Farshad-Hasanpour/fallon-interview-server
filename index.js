@@ -1,5 +1,4 @@
 require('./config/process');
-const db = require('./config/db');
 const app = require('./config/app.js');
 
 const server = app.listen(Number(process.env.NODE_APP_PORT), () => {

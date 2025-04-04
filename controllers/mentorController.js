@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const jwtMiddleware = require("../middlewares/jwtMiddleware");
-const db = require("../config/db.js");
+const {getAllMentors} = require("../config/db.js");
 
 router.get('/mentors', jwtMiddleware, async (req, res) => {
-	const mentors = await db.getData("/mentors");
+	const mentors = await getAllMentors();
 	if(!Array.isArray(mentors)){
 		return res.sendResponse(500, 'Something went wrong');
 	}

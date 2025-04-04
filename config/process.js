@@ -21,3 +21,7 @@ if(!process.env.NODE_APP_JWT_SECRET){
 if(!process.env.NODE_APP_JWT_REMEMBER_ME_EXPIRE || !process.env.NODE_APP_JWT_EXPIRE){
 	throw new Error('NODE_APP_JWT_EXPIRE & NODE_APP_JWT_REMEMBER_ME_EXPIRE env variables are required');
 }
+
+if(!process.env.NODE_APP_DB_NAME){
+	throw new Error('NODE_APP_DB_NAME env variable is required');
+}

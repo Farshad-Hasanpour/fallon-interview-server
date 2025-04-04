@@ -1,13 +1,23 @@
-const supertest = require('supertest');
+const request  = require('supertest');
 require('../config/process');
 const app = require('../config/app');
 
-// jest.mock('../config/db');
-const db = require('../config/db');
+jest.mock('node-json-db');
+const { JsonDB } = require('node-json-db');
+// const db = new JsonDB(new Config("__tests__/database", true, true, '/'));
 
 describe('POST /bookings', () => {
+	beforeEach(() => {
+		JsonDB.mockClear();
+	});
+
 	it('must fail when req.body.mentorEmail is not set or mentor is not found', async () => {
-		// db.getUsers.mockResolvedValue([{ id: 1, name: 'Alice' }]);
+		const mockGetData = jest.fn().mockReturnValue({ id: 1, name: 'Alice' });
+
+		// When Express app calls new JsonDB(...), it gets this fake instance
+		JsonDB.mockImplementation(() => ({
+			getData: mockGetData
+		}));
 
 		expect(1 + 1).toBe(2);
 	});
