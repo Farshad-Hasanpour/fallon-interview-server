@@ -3,6 +3,12 @@ const jwt = require('jsonwebtoken');
 const router = require("express").Router();
 const db = require("../config/db");
 
+async function findUserByEmail(email) {
+	const allUsers = await db.getData(`/users`);
+	if(!allUsers?.length) return null;
+	return allUsers.find(user => user.email === email)
+}
+
 async function signJWT(email, rememberMe){
 	return jwt.sign({
 		email
@@ -15,11 +21,8 @@ async function signJWT(email, rememberMe){
 
 router.post("/auth/signup", async (req, res) => {
 	// Cancel if user already exists
-	const existingUser = (await db.getData(`/users`))
-		.find(user => user.email === req.body.email)
-	if(existingUser){
-		return res.sendResponse(400, 'User already exists.')
-	}
+	const existingUser = await findUserByEmail(req.body.email)
+	if(existingUser) return res.sendResponse(400, 'User already exists.')
 
 	// hash password
 	req.body.password = await bcrypt.hash(req.body.password, 10);
@@ -30,7 +33,7 @@ router.post("/auth/signup", async (req, res) => {
 		email: req.body.email,
 		password: req.body.password,
 	};
-	await db.push('/users', newUser);
+	await db.push('/users[]', newUser);
 
 	// assign a jwt
 	const token = await signJWT(newUser.email, req.body.rememberMe)
@@ -40,8 +43,7 @@ router.post("/auth/signup", async (req, res) => {
 
 router.post('/auth/login', async (req, res) => {
 	//Check if user exists
-	const existingUser = (await db.getData(`/users`))
-		.find(user => user.email === req.body.email)
+	const existingUser = await findUserByEmail(req.body.email)
 	if(!existingUser) return res.sendResponse(404, 'User does not exist.')
 
 	// Check if password is correct

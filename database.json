@@ -1,0 +1,14 @@
+{
+    "users": [
+        {
+            "name": "test example",
+            "email": "test@example.com",
+            "password": "$2b$10$uvUF3BtHaxhf57lcE.UVkuVN1YVyngwNDROMPlSIDzNhjrBGKrbjm"
+        },
+        {
+            "name": "test example",
+            "email": "testt@example.com",
+            "password": "$2b$10$1OeuiJdS3uYeuzeh4NRcgu0SX0qxi0TQBT7mN3YGExyR4NRRsm9Rm"
+        }
+    ]
+}

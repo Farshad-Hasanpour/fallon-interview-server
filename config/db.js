@@ -7,6 +7,6 @@ if(!process.env.NODE_APP_DB_NAME){
 module.exports = new JsonDB(new Config(
 	process.env.NODE_APP_DB_NAME,
 	true,
-	false,
+	true,
 	'/'
 ));
