@@ -141,7 +141,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 	}
 	await addBooking(newBooking);
 
-	sendBookingEmail(mentor, req.authorizedUser.email)
+	!req.body.noEmail && sendBookingEmail(mentor, req.authorizedUser.email)
 
 	return res.sendResponse(201, '', {
 		mentor,

@@ -26,7 +26,7 @@ function mockAction(databaseAction, data){
 
 function book(data){
 	return request(app).post(`${prefix}/bookings`)
-		.send(data)
+		.send({...data, noEmail: true})
 		.set('Authorization', `Bearer ${token}`)
 }
 
