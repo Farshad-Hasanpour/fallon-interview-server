@@ -7,7 +7,7 @@
 		"setup-env": "node setup-env.js",
 		"start": "npm run setup-env && node index.js",
 		"dev": "npm run setup-env && npx nodemon index.js",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "jest"
 	},
 	"keywords": [],
 	"author": "Farshad Hasanpour <farshad.hasanpour96@gmail.com> (https://codewanted.net)",
@@ -26,6 +26,8 @@
 		"xss-clean": "^0.1.4"
 	},
 	"devDependencies": {
-		"nodemon": "^3.1.9"
+		"jest": "^29.7.0",
+		"nodemon": "^3.1.9",
+		"supertest": "^7.1.0"
 	}
 }
