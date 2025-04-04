@@ -55,6 +55,17 @@ function findOverlappingBookingInList(bookingList, bookingTimestamp){
 	return null;
 }
 
+router.get('/bookings', jwtMiddleware, async (req, res) => {
+	const myBookings = await getBookingsByUserEmail(req.authorizedUser.email);
+	const now = new Date().getTime();
+
+	return res.sendResponse(200, '', {
+		bookings: myBookings.filter(booking =>
+			!booking.time || new Date(booking.time).getTime() >= now
+		)
+	})
+})
+
 router.post('/bookings', jwtMiddleware, async (req, res) => {
 	const mentor = await findMentorByEmail(req.body.mentorEmail);
 	if(!mentor) return res.sendResponse(404, 'Mentor not found')
