@@ -15,6 +15,24 @@ async function getBookingsByMentorEmail(mentorEmail){
 		.filter(booking => booking.mentorEmail === mentorEmail);
 }
 
+async function getBookingsByUserEmail(userEmail){
+	return (await db.getData('/bookings'))
+		.filter(booking => booking.userEmail === userEmail);
+}
+
+function isReserveTimeOverlapping(reservedTimestamp, bookingTimestamp){
+	return (
+		(
+			bookingTimestamp >= reservedTimestamp &&
+			bookingTimestamp <= reservedTimestamp + DEFAULT_BOOKING_DURATION
+		) ||
+		(
+			bookingTimestamp <= reservedTimestamp &&
+			bookingTimestamp >= reservedTimestamp - DEFAULT_BOOKING_DURATION
+		)
+	)
+}
+
 router.post('/bookings', jwtMiddleware, async (req, res) => {
 	const mentor = await findMentorByEmail(req.body.mentorEmail);
 	if(!mentor) return res.sendResponse(404, 'Mentor not found')
@@ -28,32 +46,37 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		}
 	}
 
-	const allMentorBookings = getBookingsByMentorEmail(mentor.email);
+
+
+	const allMentorBookings = await getBookingsByMentorEmail(mentor.email);
+
 
 	if(bookingTime){
-		// Cancel if there is an overlapping booking reserved
 		const bookingTimestamp = bookingTime.getTime()
-		const overlappingBooking = allMentorBookings
+
+		// Cancel if there is an overlapping booking reserved for user
+		const allUserBookings = await getBookingsByUserEmail(req.authorizedUser.email);
+		const userOverlappingBookings = allUserBookings
 			.find(booking => {
 				if(!booking.time) return false;
 				const reservedStartTime = new Date(booking.time).getTime();
-
-				return (
-					(
-						bookingTimestamp >= reservedStartTime &&
-						bookingTimestamp <= reservedStartTime + DEFAULT_BOOKING_DURATION
-					) ||
-					(
-						bookingTimestamp <= reservedStartTime &&
-						bookingTimestamp >= reservedStartTime - DEFAULT_BOOKING_DURATION
-					)
-				)
+				return isReserveTimeOverlapping(reservedStartTime, bookingTime.getTime())
 			})
+		if(userOverlappingBookings) {
+			return res.sendResponse(400, 'Sorry! You have another meeting around the same time');
+		}
 
-		if(overlappingBooking) {
+		// Cancel if there is an overlapping booking reserved for mentor
+		const mentorOverlappingBooking = allMentorBookings
+			.find(booking => {
+				if(!booking.time) return false;
+				const reservedStartTime = new Date(booking.time).getTime();
+				return isReserveTimeOverlapping(reservedStartTime, bookingTime.getTime())
+			})
+		if(mentorOverlappingBooking) {
 			let message = '';
-			if(overlappingBooking.userEmail === req.authorizedUser.email){
-				message = 'You have another booking set around the same time';
+			if(mentorOverlappingBooking.userEmail === req.authorizedUser.email){
+				message = 'You have another meeting with this mentor around the same time';
 			}else {
 				const reservedStartTime = new Date(overlappingBooking.time).getTime();
 				const reservedFinishTime = reservedStartTime + DEFAULT_BOOKING_DURATION;
