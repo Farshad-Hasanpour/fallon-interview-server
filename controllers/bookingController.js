@@ -65,8 +65,11 @@ function sendBookingEmail(mentor, userEmail){
 		text: mailText, // plain text body
 		html: `<p>${mailText}</p>`, // html body
 	}, (error, info) => {
-		if (error) return console.error('Email Error:', error);
-		console.log('Email sent:', info.messageId);
+		if(info?.messageId) {
+			console.log('Email sent:', info.messageId);
+		} else {
+			console.log('Count not send Email')
+		}
 	});
 }
 
