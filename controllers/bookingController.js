@@ -2,7 +2,8 @@ const router = require("express").Router();
 const jwtMiddleware = require("../middlewares/jwtMiddleware");
 const db = require("../config/db.js");
 
-const DEFAULT_BOOKING_DURATION = 1000 * 60 * 30;
+const gapByMinute = 30;
+const DEFAULT_BOOKING_DURATION = 1000 * 60 * gapByMinute;
 
 async function findMentorByEmail(email) {
 	const allMentors = await db.getData(`/mentors`);
@@ -33,6 +34,25 @@ function isReserveTimeOverlapping(reservedTimestamp, bookingTimestamp){
 	)
 }
 
+function findOverlappingBookingInList(bookingList, bookingTimestamp){
+	const overlappingBookingInList = bookingList
+		.find(booking => {
+			if(!booking.time) return false;
+			const reservedStartTime = new Date(booking.time).getTime();
+			return isReserveTimeOverlapping(reservedStartTime, bookingTimestamp)
+		})
+	if(overlappingBookingInList) {
+		const reservedStartTime = new Date(overlappingBookingInList.time).getTime();
+		const reservedFinishTime = reservedStartTime + DEFAULT_BOOKING_DURATION;
+
+		return {
+			start:  new Date(reservedStartTime).toLocaleString(),
+			end: new Date(reservedFinishTime).toLocaleString(),
+		}
+	}
+	return null;
+}
+
 router.post('/bookings', jwtMiddleware, async (req, res) => {
 	const mentor = await findMentorByEmail(req.body.mentorEmail);
 	if(!mentor) return res.sendResponse(404, 'Mentor not found')
@@ -56,33 +76,22 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 
 		// Cancel if there is an overlapping booking reserved for user
 		const allUserBookings = await getBookingsByUserEmail(req.authorizedUser.email);
-		const userOverlappingBookings = allUserBookings
-			.find(booking => {
-				if(!booking.time) return false;
-				const reservedStartTime = new Date(booking.time).getTime();
-				return isReserveTimeOverlapping(reservedStartTime, bookingTime.getTime())
-			})
+		const userOverlappingBookings = findOverlappingBookingInList(
+			allUserBookings,
+			bookingTimestamp
+		)
 		if(userOverlappingBookings) {
-			return res.sendResponse(400, 'Sorry! You have another meeting around the same time');
+			const message = `Sorry! You have another meeting around the same time from ${userOverlappingBookings.start} to ${userOverlappingBookings.end}. Please try another time with ${gapByMinute} minutes gap.`;
+			return res.sendResponse(400, message)
 		}
 
 		// Cancel if there is an overlapping booking reserved for mentor
-		const mentorOverlappingBooking = allMentorBookings
-			.find(booking => {
-				if(!booking.time) return false;
-				const reservedStartTime = new Date(booking.time).getTime();
-				return isReserveTimeOverlapping(reservedStartTime, bookingTime.getTime())
-			})
+		const mentorOverlappingBooking = findOverlappingBookingInList(
+			allMentorBookings,
+			bookingTimestamp
+		)
 		if(mentorOverlappingBooking) {
-			let message = '';
-			if(mentorOverlappingBooking.userEmail === req.authorizedUser.email){
-				message = 'You have another meeting with this mentor around the same time';
-			}else {
-				const reservedStartTime = new Date(overlappingBooking.time).getTime();
-				const reservedFinishTime = reservedStartTime + DEFAULT_BOOKING_DURATION;
-				message = `Sorry. This mentor is has another meeting from ${new Date(reservedStartTime).toLocaleString()} to ${new Date(reservedFinishTime).toLocaleString()}. Please try another time or another mentor.`;
-			}
-
+			const message = `Sorry. This mentor has another meeting from ${mentorOverlappingBooking.start} to ${mentorOverlappingBooking.end}. Please try another time with ${gapByMinute} minutes gap or try another mentor.`;
 			return res.sendResponse(400, message)
 		}
 	} else {
@@ -94,7 +103,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 			))
 
 		if(doesBookingAlreadyExist){
-			return res.sendResponse(400, 'You already have a meeting with the same mentor. We will contact you as soon as possible');
+			return res.sendResponse(400, 'You already have a meeting with the same mentor and no time set. We will contact you as soon as possible');
 		}
 	}
 
@@ -103,7 +112,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		mentorEmail: mentor.email,
 		time: bookingTime,
 	}
-	await db.push('/mentors[]', newBooking);
+	await db.push('/bookings[]', newBooking);
 
 	return res.sendResponse(201, '', {
 		mentor,
