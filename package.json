@@ -4,8 +4,9 @@
 	"description": "Interview Project for O'fallon",
 	"main": "index.js",
 	"scripts": {
-		"start": "node index.js",
-		"dev": "npx nodemon index.js",
+		"setup-env": "node setup-env.js",
+		"start": "npm run setup-env && node index.js",
+		"dev": "npm run setup-env && npx nodemon index.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
