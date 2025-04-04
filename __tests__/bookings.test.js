@@ -16,6 +16,10 @@ const token = jwt.sign({
 
 const prefix = '/api/v1'
 
+function mockAction(databaseAction, data){
+	databaseAction.mockImplementation(jest.fn().mockReturnValue(data))
+}
+
 function book(data){
 	return request(app).post(`${prefix}/bookings`)
 		.send(data)
@@ -30,10 +34,14 @@ describe('POST /bookings', () => {
 		addBooking.mockClear();
 	});
 
-	getAllUsers.mockImplementation(jest.fn().mockReturnValue([
+	mockAction(getAllUsers, [
 		{ email: loggedUserEmail },
-		{ email: 'john@carpet.com' }
-	]));
+		{ email: 'milad@akbari.com' }
+	])
+	mockAction(getAllMentors, [
+		{ email: 'john@carpet.com' },
+		{ email: 'sara@johnson.com'}
+	])
 
 	it('must fail when req.body.mentorEmail is not set', async () => {
 		const res = await book({time: null});
@@ -41,38 +49,27 @@ describe('POST /bookings', () => {
 	});
 
 	it('must fail when mentor is not found', async () => {
-		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
-			{ email: 'john@carpet.com' }
-		]));
-
 		const res = await book({mentorEmail: 'sdfgf@sdffg.com'});
 		expect(res.body.message).toBe('Mentor not found');
 	});
 
 	it('must fail when req.body.time is not formatted correctly', async () => {
-		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
-			{ email: 'john@carpet.com' }
-		]));
 		const res = await book({mentorEmail: 'john@carpet.com', time: 'd3c3'});
 		expect(res.body.message).toBe('Incorrect time format');
 	});
 
 	describe('When booking has no time (as soon as possible)', () => {
-		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
-			{ email: 'john@carpet.com' }
-		]));
-
 		it('Must create when user has not booked with that mentor yet', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([]));
+			mockAction(getAllBookings, [])
 
 			const res = await book({ mentorEmail: 'john@carpet.com' });
 			expect(res.status).toBe(201);
 		})
 		it('Must fail when user has already booked with that mentor', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([{
+			mockAction(getAllBookings, [{
 				mentorEmail: 'john@carpet.com',
 				userEmail: loggedUserEmail
-			}]));
+			}])
 
 			const res = await book({ mentorEmail: 'john@carpet.com' });
 			expect(res.body.message).toBe('You already have a meeting with the same mentor and no time set. We will contact you as soon as possible');
@@ -80,58 +77,56 @@ describe('POST /bookings', () => {
 	})
 
 	describe('When booking has specific start time (each meeting takes 30 minutes)', () => {
-		getAllMentors.mockImplementation(jest.fn().mockReturnValue([
-			{ email: 'john@carpet.com' },
-			{ email: 'sara@johnson.com'}
-		]));
-
-		it('Must fail when user has another meeting with overlapping times greater than booking time', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([
+		describe('Must fail when user has another meeting with overlapping times', () => {
+			const mockBookings = () => mockAction(getAllBookings, [
 				{ mentorEmail: 'sara@johnson.com', userEmail: loggedUserEmail, time: '2025-04-04T16:55:39.442Z' },
-			]));
+			])
 
-			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
-			expect(
-				res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
-			).toBe(true);
+			it('When overlapping time is greater than booking time', async () => {
+				mockBookings();
+
+				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
+				expect(
+					res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
+				).toBe(true);
+			})
+
+			it('When overlapping time is lower than booking time', async () => {
+				mockBookings();
+
+				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
+				expect(
+					res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
+				).toBe(true);
+			})
 		})
 
-		it('Must fail when user has another meeting with overlapping times lower than booking time', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([
-				{ mentorEmail: 'sara@johnson.com', userEmail: loggedUserEmail, time: '2025-04-04T16:55:39.442Z' },
-			]));
-
-			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
-			expect(
-				res.body.message.startsWith('Sorry! You have another meeting around the same time from ')
-			).toBe(true);
-		})
-
-		it('Must fail when mentor has another meeting with overlapping times greater than booking time', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([
+		describe('Must fail when mentor has another meeting with overlapping times', () => {
+			const markBookings = () => mockAction(getAllBookings, [
 				{ mentorEmail: 'john@carpet.com', userEmail: 'test@example.com', time: '2025-04-04T16:55:39.442Z' },
-			]));
+			])
 
-			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
-			console.log(res.body);
-			expect(
-				res.body.message.startsWith('Sorry. This mentor has another meeting from ')
-			).toBe(true);
-		})
+			it('When overlapping time is greater than booking time', async () => {
+				markBookings()
 
-		it('Must fail when mentor has another meeting with overlapping times lower than booking time', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([
-				{ mentorEmail: 'john@carpet.com', userEmail: 'test@example.com', time: '2025-04-04T16:55:39.442Z' },
-			]));
+				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T17:00:39.442Z' });
+				expect(
+					res.body.message.startsWith('Sorry. This mentor has another meeting from ')
+				).toBe(true);
+			})
 
-			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
-			expect(
-				res.body.message.startsWith('Sorry. This mentor has another meeting from ')
-			).toBe(true);
+			it('When overlapping times lower than booking time', async () => {
+				markBookings()
+
+				const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
+				expect(
+					res.body.message.startsWith('Sorry. This mentor has another meeting from ')
+				).toBe(true);
+			})
 		})
 
 		it('Must create booking when both user and mentor are free around that time', async () => {
-			getAllBookings.mockImplementation(jest.fn().mockReturnValue([]));
+			mockAction(getAllBookings, [])
 
 			const res = await book({ mentorEmail: 'john@carpet.com', time: '2025-04-04T16:50:39.442Z' });
 			expect(
