@@ -1,14 +1,66 @@
 {
     "users": [
         {
-            "name": "test example",
-            "email": "test@example.com",
-            "password": "$2b$10$uvUF3BtHaxhf57lcE.UVkuVN1YVyngwNDROMPlSIDzNhjrBGKrbjm"
+            "name": "Farshad Hasanpour",
+            "email": "farshad.hasanpour96@gmail.com",
+            "password": "$2b$10$BT.kKajOVaAjF7F9C3F3MetHuOotAHb8MSR71ndXab8tYcIqj3J9a"
+        }
+    ],
+    "mentors": [
+        {
+            "id": 1,
+            "name": "Dr. Lila Rahimi",
+            "expertise": "AI & Machine Learning",
+            "email": "lila.rahimi@example.com",
+            "bio": "Professor and researcher focused on deep learning and ethics in AI.",
+            "available": true,
+            "yearsExperience": 12,
+            "rating": 4.5,
+            "location": "San Francisco, CA"
         },
         {
-            "name": "test example",
-            "email": "testt@example.com",
-            "password": "$2b$10$1OeuiJdS3uYeuzeh4NRcgu0SX0qxi0TQBT7mN3YGExyR4NRRsm9Rm"
+            "id": 2,
+            "name": "Carlos Mendes",
+            "expertise": "DevOps & Cloud",
+            "email": "carlos.mendes@example.com",
+            "bio": "AWS-certified engineer helping startups scale with cloud-native tools.",
+            "available": false,
+            "yearsExperience": 8,
+            "rating": 5,
+            "location": "Lisbon, Portugal"
+        },
+        {
+            "id": 3,
+            "name": "Aisha Khan",
+            "expertise": "Frontend Development",
+            "email": "aisha.khan@example.com",
+            "bio": "React and design systems enthusiast mentoring junior developers.",
+            "available": true,
+            "yearsExperience": 6,
+            "rating": 3.7,
+            "location": "Toronto, Canada"
+        },
+        {
+            "id": 4,
+            "name": "Tomoko Sato",
+            "expertise": "Product Management",
+            "email": "tomoko.sato@example.com",
+            "bio": "Product leader with experience in fintech and user research.",
+            "available": true,
+            "yearsExperience": 10,
+            "rating": 4.8,
+            "location": "Tokyo, Japan"
+        },
+        {
+            "id": 5,
+            "name": "Victor Ndlovu",
+            "expertise": "Backend Architecture",
+            "email": "victor.ndlovu@example.com",
+            "bio": "Go and Node.js backend specialist passionate about clean code.",
+            "available": false,
+            "yearsExperience": 9,
+            "rating": 4.9,
+            "location": "Cape Town, South Africa"
         }
     ]
 }
