@@ -74,7 +74,9 @@ function sendBookingEmail(mentor, userEmail){
 }
 
 router.get('/bookings', jwtMiddleware, async (req, res) => {
-	const myBookings = await getBookingsByUserEmail(req.authorizedUser.email);
+	const myBookings = JSON.parse(JSON.stringify(
+		await getBookingsByUserEmail(req.authorizedUser.email)
+	));
 	const now = new Date().getTime();
 
 	const myFutureBookings = await Promise.all(
@@ -84,7 +86,7 @@ router.get('/bookings', jwtMiddleware, async (req, res) => {
 			// populate mentor
 			.map(async (booking) => {
 				delete booking.userEmail;
-				booking.mentor = await findMentorByEmail(booking.mentorEmail);
+				booking.mentor = JSON.parse(JSON.stringify(await findMentorByEmail(booking.mentorEmail)));
 				delete booking.mentorEmail;
 				return booking
 			})
