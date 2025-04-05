@@ -77,11 +77,20 @@ router.get('/bookings', jwtMiddleware, async (req, res) => {
 	const myBookings = await getBookingsByUserEmail(req.authorizedUser.email);
 	const now = new Date().getTime();
 
-	return res.sendResponse(200, '', {
-		bookings: myBookings.filter(booking =>
-			!booking.time || new Date(booking.time).getTime() >= now
-		)
-	})
+	const myFutureBookings = await Promise.all(
+		myBookings
+			// filter future meetings
+			.filter(booking => !booking.time || new Date(booking.time).getTime() >= now)
+			// populate mentor
+			.map(async (booking) => {
+				delete booking.userEmail;
+				booking.mentor = await findMentorByEmail(booking.mentorEmail);
+				delete booking.mentorEmail;
+				return booking
+			})
+	)
+
+	return res.sendResponse(200, '', {bookings: myFutureBookings});
 })
 
 router.post('/bookings', jwtMiddleware, async (req, res) => {
