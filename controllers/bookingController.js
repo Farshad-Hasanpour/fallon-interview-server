@@ -3,6 +3,7 @@ const jwtMiddleware = require("../middlewares/jwtMiddleware");
 const {getAllMentors, getAllBookings, addBooking} = require("../config/db.js");
 const mailer = require("../config/mail");
 
+// TODO: create end time for bookings
 const gapByMinute = 30;
 const DEFAULT_BOOKING_DURATION = 1000 * 60 * gapByMinute;
 
@@ -96,9 +97,11 @@ router.get('/bookings', jwtMiddleware, async (req, res) => {
 })
 
 router.post('/bookings', jwtMiddleware, async (req, res) => {
+	// mentorEmail validation
 	const mentor = await findMentorByEmail(req.body.mentorEmail);
 	if(!mentor) return res.sendResponse(404, 'Mentor not found')
 
+	// time validation
 	let bookingTime = null;
 	if(req.body.time){
 		bookingTime = new Date(req.body.time);
@@ -111,6 +114,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		}
 	}
 
+	// TODO: specify limited times for client using a different endpoint
 	const allMentorBookings = await getBookingsByMentorEmail(mentor.email);
 	if(bookingTime){
 		const bookingTimestamp = bookingTime.getTime()
@@ -148,6 +152,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 		}
 	}
 
+	// push to database
 	const newBooking = {
 		userEmail: req.authorizedUser.email,
 		mentorEmail: mentor.email,
@@ -155,6 +160,7 @@ router.post('/bookings', jwtMiddleware, async (req, res) => {
 	}
 	await addBooking(newBooking);
 
+	// Send email on success
 	!req.body.noEmail && sendBookingEmail(mentor, req.authorizedUser.email)
 
 	return res.sendResponse(201, '', {

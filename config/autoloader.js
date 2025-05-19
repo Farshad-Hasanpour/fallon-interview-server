@@ -48,6 +48,7 @@ function getRoutesWrapper(express){
 						try {
 							await handler.handle(req, res, next);
 						} catch (error) {
+							// TODO: error logger
 							res.status(500).send({
 								success: false,
 								message: error.message,
